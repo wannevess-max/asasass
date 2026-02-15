@@ -269,7 +269,6 @@ function parseMoeda(valor) {
 function atualizarFinanceiro() {
     if (!rotaIniciada) return;
 
-    // 1. Captura de Dados Básicos
     const kmTotal = (distRotaMetros / 1000);
     const kmVazio = (distVazioMetros / 1000);
     const kmGeral = kmTotal + kmVazio;
@@ -283,26 +282,6 @@ function atualizarFinanceiro() {
     const freteKmInput = parseMoeda(document.getElementById("valorPorKm").value);
     const impostoP = parseFloat(document.getElementById("imposto").value) || 1;
 
-    // 2. Lógica de Deslocamento Remunerado (NOVO)
-    const tipoDesloc = document.getElementById("tipoDeslocamento").value;
-    let valorDeslocamento = 0;
-
-    if (tipoDesloc === "remunerado_km") {
-        const valorPorKmVazio = parseMoeda(document.getElementById("valorDeslocamentoKm").value);
-        valorDeslocamento = kmVazio * valorPorKmVazio;
-    } else if (tipoDesloc === "remunerado_rs") {
-        valorDeslocamento = parseMoeda(document.getElementById("valorDeslocamentoTotal").value);
-    }
-
-    // 3. Cálculos de Frete e Imposto
-    const freteBrutoOriginal = freteKmInput * kmTotal;
-    const freteBrutoComDesloc = freteBrutoOriginal + valorDeslocamento;
-    
-    // O imposto incide sobre o faturamento bruto total (Frete + Deslocamento)
-    const valorNominalImposto = freteBrutoComDesloc * (1 - impostoP);
-    const freteLiq = freteBrutoComDesloc - valorNominalImposto;
-
-    // 4. Cálculos de Custos Operacionais
     const custoCombustivel = consumoM > 0 ? (kmGeral / consumoM) * dieselL : 0;
     const custoArla = consumoM > 0 ? ((kmGeral / consumoM) * arlaP) * arlaL : 0;
     const custoManut = kmGeral * manutKm;
@@ -314,40 +293,26 @@ function atualizarFinanceiro() {
     }
 
     const totalCustos = custoCombustivel + custoArla + custoManut + pedagio + custoFrio;
+    const freteLiq = (freteKmInput * kmTotal) * impostoP;
     const lucro = freteLiq - totalCustos;
 
-    // 5. Atualização da Interface (DOM)
     const opt = { style: 'currency', currency: 'BRL' };
     
-    // KM e Progress Bar
     document.getElementById("txt-km-total").innerText = kmGeral.toFixed(1) + " km";
     document.getElementById("txt-km-vazio-det").innerText = kmVazio.toFixed(1) + " km";
     document.getElementById("txt-km-rota-det").innerText = kmTotal.toFixed(1) + " km";
 
-    // Painel Principal (Sidebar)
-    document.getElementById("txt-frete-base").innerText = freteBrutoOriginal.toLocaleString('pt-BR', opt);
-    document.getElementById("txt-valor-deslocamento-fin").innerText = valorDeslocamento.toLocaleString('pt-BR', opt);
-    document.getElementById("txt-valor-imp").innerText = valorNominalImposto.toLocaleString('pt-BR', opt);
-    document.getElementById("txt-frete-total").innerText = freteLiq.toLocaleString('pt-BR', opt);
-    document.getElementById("txt-km-real").innerText = (kmTotal > 0 ? (freteLiq / kmTotal) : 0).toLocaleString('pt-BR', opt);
-
-    // Painel de Custos Extras
     document.getElementById("txt-an-diesel").innerText = custoCombustivel.toLocaleString('pt-BR', opt);
     document.getElementById("txt-an-pedagio").innerText = pedagio.toLocaleString('pt-BR', opt);
     document.getElementById("txt-an-manut").innerText = custoManut.toLocaleString('pt-BR', opt);
     document.getElementById("txt-an-frio").innerText = custoFrio.toLocaleString('pt-BR', opt);
     document.getElementById("txt-total-custos").innerText = totalCustos.toLocaleString('pt-BR', opt);
     document.getElementById("txt-lucro-real").innerText = lucro.toLocaleString('pt-BR', opt);
-    
-    // Novos campos do resumo operacional
-    if(document.getElementById("txt-an-frete-liquido")) {
-        document.getElementById("txt-an-frete-liquido").innerText = freteLiq.toLocaleString('pt-BR', opt);
-    }
-    if(document.getElementById("txt-an-imposto")) {
-        document.getElementById("txt-an-imposto").innerText = valorNominalImposto.toLocaleString('pt-BR', opt);
-    }
 
-    // Barras Visuais
+    document.getElementById("txt-frete-base").innerText = (freteKmInput * kmTotal).toLocaleString('pt-BR', opt);
+    document.getElementById("txt-frete-total").innerText = freteLiq.toLocaleString('pt-BR', opt);
+    document.getElementById("txt-km-real").innerText = (kmTotal > 0 ? (freteLiq / kmTotal) : 0).toLocaleString('pt-BR', opt);
+
     const pVazio = kmGeral > 0 ? (kmVazio / kmGeral) * 100 : 0;
     const pRota = kmGeral > 0 ? (kmTotal / kmGeral) * 100 : 100;
     document.getElementById("visual-vazio").style.width = pVazio + "%";
@@ -510,4 +475,3 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-
